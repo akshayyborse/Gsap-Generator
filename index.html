@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSAP Animation Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- PrismJS for syntax highlighting (customized for monochrome) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Minimal Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555;
+        }
+
+        /* Monochrome Slider */
+        .slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 2px;
+            background: #333333;
+            border-radius: 0px;
+            outline: none;
+        }
+
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid #000;
+        }
+
+        .slider-thumb::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #ffffff;
+        }
+
+        /* Subtle Grid */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        /* Toggle Switch - Monochrome */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #ffffff;
+        }
+
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: #ffffff;
+        }
+
+        /* Prism Overrides for Monochrome feel */
+        pre[class*="language-"] {
+            background: #000 !important;
+            text-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        code[class*="language-"],
+        pre[class*="language-"] {
+            color: #a3a3a3 !important;
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+
+        /* Token overrides */
+        .token.string {
+            color: #ffffff !important;
+        }
+
+        .token.number {
+            color: #ffffff !important;
+        }
+
+        .token.function {
+            color: #d4d4d4 !important;
+        }
+
+        .token.keyword {
+            color: #737373 !important;
+        }
+
+        .token.property {
+            color: #a3a3a3 !important;
+        }
+
+        .token.punctuation {
+            color: #525252 !important;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col overflow-hidden selection:bg-white selection:text-black">
+
+    <!-- Header -->
+    <header class="bg-black border-b border-neutral-800 h-14 flex items-center justify-between px-6 shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-white p-1 rounded-sm">
+                <i data-lucide="zap" class="w-4 h-4 text-black fill-black"></i>
+            </div>
+            <h1 class="font-semibold text-lg tracking-tight text-white">GSAP <span
+                    class="text-neutral-500 font-light">Generator</span></h1>
+        </div>
+        <div class="flex gap-4 text-xs text-neutral-500 font-mono">
+            <span class="opacity-50">v1.0.0</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex overflow-hidden">
+
+        <!-- Sidebar Controls -->
+        <aside class="w-80 bg-black border-r border-neutral-800 flex flex-col overflow-y-auto shrink-0 z-10">
+            <div class="p-6 space-y-8">
+
+                <!-- Target Selector -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Element</h3>
+                    </div>
+                    <div class="grid grid-cols-6 gap-2" id="target-selector">
+                        <button onclick="setTargetType('box')"
+                            class="target-btn active ring-1 ring-white p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Box">
+                            <div class="w-3 h-3 bg-white rounded-sm"></div>
+                        </button>
+                        <button onclick="setTargetType('circle')"
+                            class="target-btn p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Circle">
+                            <div class="w-3 h-3 bg-white rounded-full"></div>
+                        </button>
+                        <button onclick="setTargetType('ghost')"
+                            class="target-btn p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Ghost">
+                            <i data-lucide="ghost" class="w-3 h-3 text-white"></i>
+                        </button>
+                        <button onclick="setTargetType('rocket')"
+                            class="target-btn p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Rocket">
+                            <i data-lucide="rocket" class="w-3 h-3 text-white"></i>
+                        </button>
+                        <button onclick="setTargetType('image')"
+                            class="target-btn p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Sample Image">
+                            <i data-lucide="image" class="w-3 h-3 text-neutral-400"></i>
+                        </button>
+                        <button onclick="triggerUpload()"
+                            class="target-btn p-2 bg-neutral-900 hover:bg-neutral-800 rounded-sm flex justify-center items-center transition-all"
+                            title="Upload Photo">
+                            <i data-lucide="upload" class="w-3 h-3 text-neutral-400"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="file-upload" accept="image/*" class="hidden"
+                        onchange="handleFileUpload(this)">
+                </div>
+
+                <div class="w-full h-px bg-neutral-900"></div>
+
+                <!-- Transform Group -->
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Transform</h3>
+                        <button onclick="resetGroup('transform')"
+                            class="text-[10px] text-neutral-600 hover:text-white transition-colors uppercase tracking-wider">Reset</button>
+                    </div>
+
+                    <!-- X Translate -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">x</label>
+                            <span id="val-x" class="text-xs font-mono text-white">0</span>
+                        </div>
+                        <input type="range" id="input-x" min="-300" max="300" value="0"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Y Translate -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">y</label>
+                            <span id="val-y" class="text-xs font-mono text-white">0</span>
+                        </div>
+                        <input type="range" id="input-y" min="-300" max="300" value="0"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Rotation -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">rotation</label>
+                            <span id="val-rotation" class="text-xs font-mono text-white">0</span>
+                        </div>
+                        <input type="range" id="input-rotation" min="-360" max="360" value="0"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Scale -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">scale</label>
+                            <span id="val-scale" class="text-xs font-mono text-white">1</span>
+                        </div>
+                        <input type="range" id="input-scale" min="0" max="3" step="0.1" value="1"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Skew -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="control-group">
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-medium text-neutral-400">skewX</label>
+                                <span id="val-skewX" class="text-xs font-mono text-white">0</span>
+                            </div>
+                            <input type="range" id="input-skewX" min="-90" max="90" value="0"
+                                class="slider-thumb w-full cursor-pointer">
+                        </div>
+                        <div class="control-group">
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-medium text-neutral-400">skewY</label>
+                                <span id="val-skewY" class="text-xs font-mono text-white">0</span>
+                            </div>
+                            <input type="range" id="input-skewY" min="-90" max="90" value="0"
+                                class="slider-thumb w-full cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full h-px bg-neutral-900"></div>
+
+                <!-- Timing Group -->
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Timing</h3>
+                        <button onclick="resetGroup('timing')"
+                            class="text-[10px] text-neutral-600 hover:text-white transition-colors uppercase tracking-wider">Reset</button>
+                    </div>
+
+                    <!-- Duration -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">duration</label>
+                            <span id="val-duration" class="text-xs font-mono text-white">1</span>
+                        </div>
+                        <input type="range" id="input-duration" min="0.1" max="5" step="0.1" value="1"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Delay -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">delay</label>
+                            <span id="val-delay" class="text-xs font-mono text-white">0</span>
+                        </div>
+                        <input type="range" id="input-delay" min="0" max="5" step="0.1" value="0"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Repeat & Yoyo -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="control-group">
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-medium text-neutral-400">repeat</label>
+                                <span id="val-repeat" class="text-xs font-mono text-white">0</span>
+                            </div>
+                            <input type="range" id="input-repeat" min="-1" max="10" step="1" value="0"
+                                class="slider-thumb w-full cursor-pointer">
+                        </div>
+                        <div class="control-group">
+                            <label class="text-xs font-medium text-neutral-400 mb-2 block">yoyo</label>
+                            <div class="relative inline-block w-8 align-middle select-none">
+                                <input type="checkbox" name="toggle" id="input-yoyo"
+                                    class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-black border-2 border-neutral-600 appearance-none cursor-pointer transition-all duration-300" />
+                                <label for="input-yoyo"
+                                    class="toggle-label block overflow-hidden h-4 rounded-full bg-neutral-900 cursor-pointer border border-neutral-800"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ease -->
+                    <div class="control-group">
+                        <label class="block text-xs font-medium text-neutral-400 mb-2">ease</label>
+                        <div class="relative">
+                            <select id="input-ease"
+                                class="w-full bg-black border border-neutral-800 text-white text-xs rounded-sm focus:border-white focus:outline-none block p-2 appearance-none font-mono">
+                                <option value="none">none</option>
+                                <option value="power1.out">power1.out</option>
+                                <option value="power2.out">power2.out</option>
+                                <option value="power3.out">power3.out</option>
+                                <option value="power4.out">power4.out</option>
+                                <option value="back.out(1.7)">back.out</option>
+                                <option value="elastic.out(1, 0.3)">elastic.out</option>
+                                <option value="bounce.out">bounce.out</option>
+                                <option value="circ.out">circ.out</option>
+                                <option value="expo.out">expo.out</option>
+                                <option value="sine.out">sine.out</option>
+                                <option value="steps(5)">steps(5)</option>
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-500">
+                                <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full h-px bg-neutral-900"></div>
+
+                <!-- Appearance Group -->
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Style</h3>
+                        <button onclick="resetGroup('appearance')"
+                            class="text-[10px] text-neutral-600 hover:text-white transition-colors uppercase tracking-wider">Reset</button>
+                    </div>
+
+                    <!-- Opacity -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">opacity</label>
+                            <span id="val-opacity" class="text-xs font-mono text-white">1</span>
+                        </div>
+                        <input type="range" id="input-opacity" min="0" max="1" step="0.1" value="1"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+
+                    <!-- Border Radius -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs font-medium text-neutral-400">radius</label>
+                            <span id="val-borderRadius" class="text-xs font-mono text-white">0</span>
+                        </div>
+                        <input type="range" id="input-borderRadius" min="0" max="50" step="1" value="0"
+                            class="slider-thumb w-full cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="h-8"></div> <!-- Spacer -->
+
+            </div>
+        </aside>
+
+        <!-- Right Side: Preview & Code -->
+        <div class="flex-1 flex flex-col min-w-0 bg-black">
+
+            <!-- Preview Area -->
+            <div class="flex-1 relative bg-grid overflow-hidden flex items-center justify-center p-8 group">
+                <!-- Grid Center Lines -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-full h-px bg-neutral-900"></div>
+                    <div class="h-full w-px bg-neutral-900 absolute"></div>
+                </div>
+
+                <!-- The Target Element Container -->
+                <div id="target-container" class="relative z-10">
+                    <!-- Default Target: Box -->
+                    <div id="target"
+                        class="w-32 h-32 bg-white text-black font-bold tracking-widest text-xs flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                        BOX
+                    </div>
+                </div>
+
+                <div class="absolute bottom-6 right-6 text-[10px] text-neutral-700 font-mono tracking-widest uppercase">
+                    Preview Canvas
+                </div>
+            </div>
+
+            <!-- Code & Actions Bar -->
+            <div class="h-64 bg-black border-t border-neutral-800 flex flex-col shrink-0">
+
+                <!-- Action Toolbar -->
+                <div class="flex items-center justify-between px-6 py-3 border-b border-neutral-800 bg-black">
+                    <div class="flex gap-2">
+                        <button onclick="playAnimation()"
+                            class="flex items-center gap-2 bg-white hover:bg-neutral-200 text-black px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors">
+                            <i data-lucide="play" class="w-3 h-3 fill-current"></i> Play
+                        </button>
+                        <button onclick="resetAnimation()"
+                            class="flex items-center gap-2 border border-neutral-800 hover:border-white text-neutral-400 hover:text-white px-4 py-1.5 rounded-sm text-xs font-medium uppercase tracking-wide transition-colors bg-transparent">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Reset
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyCode()"
+                            class="flex items-center gap-2 text-neutral-500 hover:text-white px-3 py-1.5 rounded-sm text-xs transition-colors font-mono"
+                            id="copy-btn">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Editor View -->
+                <div class="flex-1 overflow-auto relative font-mono text-xs bg-black">
+                    <pre class="m-0 h-full p-6"><code id="code-output" class="language-javascript"></code></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Constants & DOM Elements
+        let target = document.getElementById('target');
+        const targetContainer = document.getElementById('target-container');
+        const codeOutput = document.getElementById('code-output');
+
+        // Input IDs mapped to their default values
+        const defaults = {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            scale: 1,
+            skewX: 0,
+            skewY: 0,
+            duration: 1,
+            delay: 0,
+            repeat: 0,
+            yoyo: false,
+            ease: 'none',
+            opacity: 1,
+            borderRadius: 0
+        };
+
+        let currentParams = { ...defaults };
+        let currentTween = null;
+
+        // Inputs Map
+        const inputs = {
+            x: document.getElementById('input-x'),
+            y: document.getElementById('input-y'),
+            rotation: document.getElementById('input-rotation'),
+            scale: document.getElementById('input-scale'),
+            skewX: document.getElementById('input-skewX'),
+            skewY: document.getElementById('input-skewY'),
+            duration: document.getElementById('input-duration'),
+            delay: document.getElementById('input-delay'),
+            repeat: document.getElementById('input-repeat'),
+            yoyo: document.getElementById('input-yoyo'),
+            ease: document.getElementById('input-ease'),
+            opacity: document.getElementById('input-opacity'),
+            borderRadius: document.getElementById('input-borderRadius')
+        };
+
+        // Value Displays Map
+        const displays = {
+            x: document.getElementById('val-x'),
+            y: document.getElementById('val-y'),
+            rotation: document.getElementById('val-rotation'),
+            scale: document.getElementById('val-scale'),
+            skewX: document.getElementById('val-skewX'),
+            skewY: document.getElementById('val-skewY'),
+            duration: document.getElementById('val-duration'),
+            delay: document.getElementById('val-delay'),
+            repeat: document.getElementById('val-repeat'),
+            opacity: document.getElementById('val-opacity'),
+            borderRadius: document.getElementById('val-borderRadius')
+        };
+
+        // Initialize Listeners
+        Object.keys(inputs).forEach(key => {
+            const input = inputs[key];
+            if (!input) return;
+
+            input.addEventListener('input', (e) => {
+                let val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+
+                // Parse number if appropriate
+                if (e.target.type !== 'checkbox' && key !== 'ease') {
+                    val = parseFloat(val);
+                }
+
+                currentParams[key] = val;
+
+                // Update display text
+                if (displays[key]) {
+                    displays[key].textContent = val;
+                }
+
+                updateCode();
+            });
+        });
+
+        // Trigger Hidden File Input
+        function triggerUpload() {
+            document.getElementById('file-upload').click();
+        }
+
+        // Handle File Selection
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    setTargetType('custom-image', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Target Switching Logic (Updated for Minimal Theme)
+        function setTargetType(type, customSrc = null) {
+            // Active State Management for Buttons
+            document.querySelectorAll('.target-btn').forEach(btn => {
+                btn.classList.remove('ring-1', 'ring-white', 'bg-neutral-800');
+                btn.classList.add('bg-neutral-900');
+            });
+
+            const btns = document.querySelectorAll('.target-btn');
+            // Mapping index based on type
+            const typeMap = ['box', 'circle', 'ghost', 'rocket', 'image', 'custom-image'];
+            const idx = typeMap.indexOf(type);
+            if (idx > -1 && btns[idx]) {
+                btns[idx].classList.remove('bg-neutral-900');
+                btns[idx].classList.add('bg-neutral-800', 'ring-1', 'ring-white');
+            }
+
+            // Reset Animation first
+            if (currentTween) currentTween.kill();
+            gsap.set(target, { clearProps: "all" });
+
+            // Create new element
+            const newEl = document.createElement('div');
+            newEl.id = 'target';
+
+            // Common Classes
+            const baseClasses = "flex items-center justify-center relative z-10 transition-colors duration-300 ";
+
+            if (type === 'box') {
+                newEl.className = baseClasses + "w-32 h-32 bg-white text-black font-bold tracking-widest text-xs shadow-[0_0_30px_rgba(255,255,255,0.1)]";
+                newEl.textContent = "BOX";
+            } else if (type === 'circle') {
+                newEl.className = baseClasses + "w-32 h-32 bg-white text-black font-bold tracking-widest text-xs rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)]";
+                newEl.textContent = "CIRCLE";
+            } else if (type === 'ghost') {
+                newEl.className = baseClasses + "w-32 h-32 text-white border border-neutral-700 bg-black rounded-lg";
+                newEl.innerHTML = '<i data-lucide="ghost" class="w-16 h-16"></i>';
+            } else if (type === 'rocket') {
+                newEl.className = baseClasses + "w-32 h-32 text-white border border-neutral-700 bg-black rounded-lg";
+                newEl.innerHTML = '<i data-lucide="rocket" class="w-16 h-16"></i>';
+            } else if (type === 'image') {
+                newEl.className = baseClasses + "w-40 h-40 overflow-hidden grayscale border border-white/20";
+                newEl.innerHTML = '<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover" alt="Abstract">';
+            } else if (type === 'custom-image') {
+                newEl.className = baseClasses + "w-40 h-40 overflow-hidden border border-white/20";
+                newEl.innerHTML = `<img src="${customSrc}" class="w-full h-full object-cover" alt="Custom Upload">`;
+            }
+
+            // Replace in DOM
+            targetContainer.innerHTML = '';
+            targetContainer.appendChild(newEl);
+            target = newEl; // Update global reference
+
+            // Re-init icons if needed
+            lucide.createIcons();
+
+            // Handle Reset Logic specific to shapes
+            if (type === 'circle') {
+                inputs.borderRadius.value = 50;
+                displays.borderRadius.textContent = 50;
+                currentParams.borderRadius = 50;
+            } else {
+                inputs.borderRadius.value = 0;
+                displays.borderRadius.textContent = 0;
+                currentParams.borderRadius = 0;
+            }
+            updateCode();
+        }
+
+        function updateCode() {
+            const paramsToDisplay = {};
+
+            paramsToDisplay.duration = currentParams.duration;
+
+            if (currentParams.ease !== 'none') {
+                paramsToDisplay.ease = `"${currentParams.ease}"`;
+            }
+
+            if (currentParams.x !== 0) paramsToDisplay.x = currentParams.x;
+            if (currentParams.y !== 0) paramsToDisplay.y = currentParams.y;
+            if (currentParams.rotation !== 0) paramsToDisplay.rotation = currentParams.rotation;
+            if (currentParams.scale !== 1) paramsToDisplay.scale = currentParams.scale;
+            if (currentParams.skewX !== 0) paramsToDisplay.skewX = currentParams.skewX;
+            if (currentParams.skewY !== 0) paramsToDisplay.skewY = currentParams.skewY;
+
+            if (currentParams.opacity !== 1) paramsToDisplay.opacity = currentParams.opacity;
+            if (currentParams.borderRadius !== 0) paramsToDisplay.borderRadius = `"${currentParams.borderRadius}%"`;
+
+            if (currentParams.delay !== 0) paramsToDisplay.delay = currentParams.delay;
+            if (currentParams.repeat !== 0) paramsToDisplay.repeat = currentParams.repeat;
+            if (currentParams.yoyo) paramsToDisplay.yoyo = true;
+
+            let propsString = Object.entries(paramsToDisplay)
+                .map(([k, v]) => `  ${k}: ${v}`)
+                .join(',\n');
+
+            let selector = ".box";
+            if (target.innerHTML.includes('ghost')) selector = ".ghost-icon";
+            if (target.innerHTML.includes('rocket')) selector = ".rocket-icon";
+            if (target.innerHTML.includes('img') && !target.innerHTML.includes('alt="Custom Upload"')) selector = ".image";
+            if (target.innerHTML.includes('alt="Custom Upload"')) selector = ".custom-image";
+            if (target.textContent.includes('CIRCLE')) selector = ".circle";
+
+            const code = `gsap.to("${selector}", {\n${propsString}\n});`;
+
+            codeOutput.textContent = code;
+            Prism.highlightElement(codeOutput);
+        }
+
+        function playAnimation() {
+            if (currentTween) currentTween.kill();
+            gsap.set(target, { clearProps: "all" });
+
+            const vars = { ...currentParams };
+            if (vars.borderRadius) vars.borderRadius = `${vars.borderRadius}%`;
+
+            currentTween = gsap.to(target, vars);
+        }
+
+        function resetAnimation() {
+            if (currentTween) currentTween.kill();
+            gsap.to(target, {
+                x: 0,
+                y: 0,
+                rotation: 0,
+                scale: 1,
+                skewX: 0,
+                skewY: 0,
+                opacity: 1,
+                borderRadius: target.textContent.includes('CIRCLE') ? '50%' : '0%',
+                duration: 0.5,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    gsap.set(target, { clearProps: "all" });
+                    if (target.textContent.includes('CIRCLE')) gsap.set(target, { borderRadius: '50%' });
+                }
+            });
+        }
+
+        function resetGroup(groupName) {
+            const updates = {};
+
+            if (groupName === 'transform') {
+                updates.x = 0;
+                updates.y = 0;
+                updates.rotation = 0;
+                updates.scale = 1;
+                updates.skewX = 0;
+                updates.skewY = 0;
+            } else if (groupName === 'timing') {
+                updates.duration = 1;
+                updates.delay = 0;
+                updates.repeat = 0;
+                updates.yoyo = false;
+                updates.ease = 'none';
+            } else if (groupName === 'appearance') {
+                updates.opacity = 1;
+                updates.borderRadius = target.textContent.includes('CIRCLE') ? 50 : 0;
+            }
+
+            Object.assign(currentParams, updates);
+
+            Object.keys(updates).forEach(key => {
+                const val = updates[key];
+                if (inputs[key]) {
+                    if (inputs[key].type === 'checkbox') {
+                        inputs[key].checked = val;
+                    } else {
+                        inputs[key].value = val;
+                    }
+                }
+                if (displays[key]) displays[key].textContent = val;
+            });
+
+            updateCode();
+        }
+
+        function copyCode() {
+            const code = codeOutput.textContent;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(code).then(showSuccess, useFallback);
+            } else {
+                useFallback();
+            }
+
+            function useFallback() {
+                const textArea = document.createElement("textarea");
+                textArea.value = code;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) showSuccess();
+                } catch (err) {
+                    console.error('Fallback copy error', err);
+                }
+                document.body.removeChild(textArea);
+            }
+
+            function showSuccess() {
+                const btn = document.getElementById('copy-btn');
+                const originalContent = btn.innerHTML;
+
+                btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-white"></i> Copied`;
+                btn.classList.add('text-white');
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('text-white');
+                    lucide.createIcons();
+                }, 2000);
+            }
+        }
+
+        updateCode();
+    </script>
+</body>
+
+</html>
